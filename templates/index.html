@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Video AI Agent</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .upload-section {
+            text-align: center;
+        }
+
+        .upload-zone {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 50px 20px;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone:hover {
+            border-color: #764ba2;
+            background: #f0f1ff;
+            transform: scale(1.02);
+        }
+
+        .upload-zone.dragover {
+            border-color: #28a745;
+            background: #f0fff0;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.3rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-download {
+            background: linear-gradient(45deg, #fd7e14, #e83e8c);
+            color: white;
+            margin-left: 10px;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(253, 126, 20, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .concepts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .concept-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #dee2e6;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .concept-card:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .concept-card.selected {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #f0fff0, #e6ffe6);
+        }
+
+        .concept-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .concept-type {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .concept-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .concept-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .complexity-badge {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .complexity-basic {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .complexity-intermediate {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .complexity-advanced {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .video-section {
+            text-align: center;
+        }
+
+        .video-container {
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .video-controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .qa-section {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .qa-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .question-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .question-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .question-input:focus {
+            border-color: #667eea;
+        }
+
+        .answer-box {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #dc3545;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 10px;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #6c757d;
+            margin-right: 10px;
+        }
+
+        .step.active .step-circle {
+            background: #667eea;
+            color: white;
+        }
+
+        .step.completed .step-circle {
+            background: #28a745;
+            color: white;
+        }
+
+        .step-arrow {
+            margin: 0 15px;
+            color: #dee2e6;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .concepts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .video-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .question-form {
+                flex-direction: column;
+            }
+
+            .progress-steps {
+                flex-direction: column;
+            }
+
+            .step-arrow {
+                transform: rotate(90deg);
+                margin: 10px 0;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-video"></i> Math Video AI Agent</h1>
+            <p>Transform your mathematical PDFs into engaging educational videos</p>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="progress-steps">
+            <div class="step active" id="step1">
+                <div class="step-circle">1</div>
+                <span>Upload PDF</span>
+            </div>
+            <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+            <div class="step" id="step2">
+                <div class="step-circle">2</div>
+                <span>Select Concept</span>
+            </div>
+            <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+            <div class="step" id="step3">
+                <div class="step-circle">3</div>
+                <span>Generate Video</span>
+            </div>
+            <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+            <div class="step" id="step4">
+                <div class="step-circle">4</div>
+                <span>Watch & Learn</span>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="card fade-in" id="uploadSection">
+            <div class="upload-section">
+                <h2 style="margin-bottom: 30px; color: #333; font-size: 2rem;">
+                    <i class="fas fa-cloud-upload-alt"></i> Upload Your Math PDF
+                </h2>
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="upload-text">
+                        Drag and drop your PDF here, or click to browse
+                    </div>
+                    <div style="color: #999; font-size: 0.9rem;">
+                        Maximum file size: 16MB
+                    </div>
+                    <input type="file" id="fileInput" class="file-input" accept=".pdf">
+                </div>
+                <div class="loading" id="uploadLoading">
+                    <div class="spinner"></div>
+                    <p>Processing your PDF and analyzing mathematical content...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Concepts Section -->
+        <div class="card fade-in hidden" id="conceptsSection">
+            <h2 style="margin-bottom: 20px; color: #333; font-size: 2rem;">
+                <i class="fas fa-lightbulb"></i> Select a Concept for Video Generation
+            </h2>
+            <p style="color: #666; margin-bottom: 25px; font-size: 1.1rem;">
+                We found several mathematical concepts that would make great educational videos. 
+                Click on one to generate a high-quality Manim animation.
+            </p>
+            <div class="concepts-grid" id="conceptsGrid">
+                <!-- Concepts will be populated here -->
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn btn-success" id="generateBtn" disabled>
+                    <i class="fas fa-play-circle"></i> Generate Video
+                </button>
+            </div>
+            <div class="loading" id="generateLoading">
+                <div class="spinner"></div>
+                <p>Generating your video... This may take a few minutes.</p>
+            </div>
+        </div>
+
+        <!-- Video Section -->
+        <div class="card fade-in hidden" id="videoSection">
+            <div class="video-section">
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 2rem;">
+                    <i class="fas fa-film"></i> Your Generated Video
+                </h2>
+                <div class="video-container">
+                    <video id="generatedVideo" controls>
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div class="video-controls">
+                    <button class="btn btn-download" id="downloadBtn">
+                        <i class="fas fa-download"></i> Download Video
+                    </button>
+                    <button class="btn btn-primary" id="newVideoBtn">
+                        <i class="fas fa-plus"></i> Generate Another Video
+                    </button>
+                </div>
+            </div>
+
+            <!-- Q&A Section -->
+            <div class="qa-section">
+                <div class="qa-title">
+                    <i class="fas fa-question-circle"></i> Ask Questions About This Video
+                </div>
+                <div class="question-form">
+                    <input type="text" class="question-input" id="questionInput" 
+                           placeholder="Ask me anything about this mathematical concept...">
+                    <button class="btn btn-primary" id="askBtn">
+                        <i class="fas fa-paper-plane"></i> Ask
+                    </button>
+                </div>
+                <div id="answerContainer">
+                    <!-- Answers will appear here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Error/Success Messages -->
+        <div id="messageContainer"></div>
+    </div>
+
+    <script>
+        class MathVideoAgent {
+            constructor() {
+                this.currentConcepts = [];
+                this.selectedConceptIndex = -1;
+                this.currentVideoPath = '';
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                // File upload
+                const uploadZone = document.getElementById('uploadZone');
+                const fileInput = document.getElementById('fileInput');
+
+                uploadZone.addEventListener('click', () => fileInput.click());
+                uploadZone.addEventListener('dragover', this.handleDragOver.bind(this));
+                uploadZone.addEventListener('drop', this.handleDrop.bind(this));
+                fileInput.addEventListener('change', this.handleFileSelect.bind(this));
+
+                // Generate button
+                document.getElementById('generateBtn').addEventListener('click', this.generateVideo.bind(this));
+
+                // Download button
+                document.getElementById('downloadBtn').addEventListener('click', this.downloadVideo.bind(this));
+
+                // New video button
+                document.getElementById('newVideoBtn').addEventListener('click', this.resetToConceptSelection.bind(this));
+
+                // Q&A
+                document.getElementById('askBtn').addEventListener('click', this.askQuestion.bind(this));
+                document.getElementById('questionInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.askQuestion();
+                });
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                e.currentTarget.classList.add('dragover');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                e.currentTarget.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.uploadFile(files[0]);
+                }
+            }
+
+            handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    this.uploadFile(file);
+                }
+            }
+
+            async uploadFile(file) {
+                if (!file.type.includes('pdf')) {
+                    this.showMessage('Please select a PDF file.', 'error');
+                    return;
+                }
+
+                this.showLoading('uploadLoading');
+                this.updateStep(1, 'active');
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const response = await axios.post('/upload', formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+
+                    if (response.data.success) {
+                        this.currentConcepts = response.data.concepts;
+                        this.displayConcepts();
+                        this.showMessage(response.data.message, 'success');
+                        this.updateStep(1, 'completed');
+                        this.updateStep(2, 'active');
+                    }
+                } catch (error) {
+                    this.showMessage(error.response?.data?.error || 'Upload failed', 'error');
+                } finally {
+                    this.hideLoading('uploadLoading');
+                }
+            }
+
+            displayConcepts() {
+                const grid = document.getElementById('conceptsGrid');
+                grid.innerHTML = '';
+
+                this.currentConcepts.forEach((concept, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'concept-card';
+                    card.dataset.index = index;
+                    
+                    const complexityClass = `complexity-${concept.complexity}`;
+                    const typeColors = {
+                        'definition': '#6f42c1',
+                        'theorem': '#dc3545',
+                        'example': '#28a745',
+                        'construction': '#fd7e14',
+                        'visualization': '#17a2b8',
+                        'algorithm': '#ffc107'
+                    };
+                    
+                    card.innerHTML = `
+                        <div class="concept-title">${concept.title}</div>
+                        <div class="concept-type" style="background: ${typeColors[concept.type] || '#667eea'}">
+                            ${concept.type}
+                        </div>
+                        <div class="concept-description">${concept.description}</div>
+                        <div class="concept-meta">
+                            <span class="complexity-badge ${complexityClass}">
+                                ${concept.complexity}
+                            </span>
+                            <span>~${concept.estimated_duration || 30}s</span>
+                        </div>
+                    `;
+
+                    card.addEventListener('click', () => this.selectConcept(index));
+                    grid.appendChild(card);
+                });
+
+                document.getElementById('uploadSection').classList.add('hidden');
+                document.getElementById('conceptsSection').classList.remove('hidden');
+            }
+
+            selectConcept(index) {
+                // Remove previous selection
+                document.querySelectorAll('.concept-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+
+                // Select new concept
+                const selectedCard = document.querySelector(`[data-index="${index}"]`);
+                selectedCard.classList.add('selected');
+                
+                this.selectedConceptIndex = index;
+                document.getElementById('generateBtn').disabled = false;
+            }
+
+            async generateVideo() {
+                if (this.selectedConceptIndex === -1) return;
+
+                this.showLoading('generateLoading');
+                this.updateStep(2, 'completed');
+                this.updateStep(3, 'active');
+
+                try {
+                    const response = await axios.post('/generate_video', {
+                        concept_index: this.selectedConceptIndex,
+                        concepts: this.currentConcepts
+                    });
+
+                    if (response.data.success) {
+                        this.currentVideoPath = response.data.video_path;
+                        this.displayVideo(response.data);
+                        this.showMessage('Video generated successfully!', 'success');
+                        this.updateStep(3, 'completed');
+                        this.updateStep(4, 'active');
+                    }
+                } catch (error) {
+                    this.showMessage(error.response?.data?.error || 'Video generation failed', 'error');
+                } finally {
+                    this.hideLoading('generateLoading');
+                }
+            }
+
+            displayVideo(videoData) {
+                const video = document.getElementById('generatedVideo');
+                video.src = videoData.video_path;
+                
+                document.getElementById('conceptsSection').classList.add('hidden');
+                document.getElementById('videoSection').classList.remove('hidden');
+            }
+
+            async downloadVideo() {
+                try {
+                    const response = await axios.get('/download_video', {
+                        responseType: 'blob'
+                    });
+
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `math_video_${Date.now()}.mp4`;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+
+                    this.showMessage('Video downloaded successfully!', 'success');
+                } catch (error) {
+                    this.showMessage('Download failed', 'error');
+                }
+            }
+
+            resetToConceptSelection() {
+                document.getElementById('videoSection').classList.add('hidden');
+                document.getElementById('conceptsSection').classList.remove('hidden');
+                document.getElementById('answerContainer').innerHTML = '';
+                this.updateStep(4, '');
+                this.updateStep(3, '');
+                this.updateStep(2, 'active');
+            }
+
+            async askQuestion() {
+                const input = document.getElementById('questionInput');
+                const question = input.value.trim();
+                
+                if (!question) return;
+
+                const container = document.getElementById('answerContainer');
+                
+                // Add question to UI
+                const questionDiv = document.createElement('div');
+                questionDiv.innerHTML = `
+                    <div style="background: #e9ecef; padding: 15px; border-radius: 15px; margin-bottom: 10px;">
+                        <strong><i class="fas fa-user"></i> You:</strong> ${question}
+                    </div>
+                `;
+                container.appendChild(questionDiv);
+
+                // Clear input
+                input.value = '';
+
+                // Show loading
+                const loadingDiv = document.createElement('div');
+                loadingDiv.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div class="spinner" style="width: 30px; height: 30px; border-width: 3px;"></div>
+                        <p>Thinking...</p>
+                    </div>
+                `;
+                container.appendChild(loadingDiv);
+
+                try {
+                    const response = await axios.post('/ask_question', { question });
+                    
+                    // Remove loading
+                    container.removeChild(loadingDiv);
+                    
+                    // Add answer
+                    const answerDiv = document.createElement('div');
+                    answerDiv.className = 'answer-box';
+                    answerDiv.innerHTML = `
+                        <strong><i class="fas fa-robot"></i> AI Assistant:</strong>
+                        <div style="margin-top: 10px; line-height: 1.6;">${response.data.answer}</div>
+                    `;
+                    container.appendChild(answerDiv);
+                    
+                    // Scroll to bottom
+                    container.scrollTop = container.scrollHeight;
+                    
+                } catch (error) {
+                    container.removeChild(loadingDiv);
+                    this.showMessage('Failed to get answer', 'error');
+                }
+            }
+
+            showLoading(elementId) {
+                document.getElementById(elementId).style.display = 'block';
+            }
+
+            hideLoading(elementId) {
+                document.getElementById(elementId).style.display = 'none';
+            }
+
+            updateStep(stepNumber, status) {
+                const step = document.getElementById(`step${stepNumber}`);
+                step.classList.remove('active', 'completed');
+                if (status) {
+                    step.classList.add(status);
+                }
+            }
+
+            showMessage(message, type) {
+                const container = document.getElementById('messageContainer');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `card ${type} fade-in`;
+                messageDiv.innerHTML = `
+                    <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'}"></i>
+                    ${message}
+                `;
+                
+                container.appendChild(messageDiv);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new MathVideoAgent();
+        });
+    </script>
+</body>
+</html>
